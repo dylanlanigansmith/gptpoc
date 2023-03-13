@@ -35,7 +35,7 @@ print("skynet 2023")
 #doesnt know date 
 #...
 
-def search_augment(query):
+def search_augment(in_query, query):
     #search_context = " "
     #from test one: "I just asked you to either search or answer the question, 'where do birds go when it rains', you searched, so here are the results of the search from the first web page, please read them and answer my questions briefly, the results are: " + results
     
@@ -71,11 +71,14 @@ def search_augment(query):
         content = ""
         for res in results:
             content += res.get_text() + " " #this way is better: https://stackoverflow.com/questions/1936466/how-to-scrape-only-visible-webpage-text-with-beautifulsoup
-        query += " This is the content of the first webpage for search prompt '" + search_query + "' please utilize them to answer from the provided previous context the initial question that prompted you to search. Do not refer to the initial question directly, instead reword it so that your answer works as a statement with the subject of the question included. Do not refer to having searched the web either, just answer the question professionally and with intelligent choice of included details. Results:" + content
+        if len(content) > 2048:
+            content = content[0 : 2047]
+        
+        query += " This is the content of the first webpage for search prompt '" + search_query + "' please utilize them to answer from the provided previous context the initial question that prompted you to search. Do not refer to the initial question directly, instead reword it so that your answer works as a statement with the subject of the question included. Do not refer to having searched the web either, just answer the question professionally and with intelligent choice of included details. Make sure to end your answer by suggesting some sources of bias that the webpage you found info from may potentially have. Previous user question for that prompted your search for context: " + in_query + "Results:" + content.strip()
         return query
 
-def augments(query):
-    query = search_augment(query)
+def augments(in_query, query):
+    query = search_augment(in_query, query)
     return query
 
 documents = SimpleDirectoryReader('data').load_data()
@@ -87,15 +90,14 @@ while(1):
         print("exiting") #stupid
         logfile.close()
         exit()
-    in_query = question + " (if searching the internet would be helpful please respond with 'search(relevant search prompt here)' to recieve the search results as a followup prompt)"
+    in_query = question + " (if searching the internet would be helpful please respond with 'search(relevant search prompt here)' to recieve the search results as a followup prompt)" #it is okay to not search
     #fix this asap so u dont waste tokens/$$$ OR DONT 
     #res = index.query("where do birds go when it rains?", mode = "default").response
     res_str = index.query(in_query).response
     print("Input response: " + res_str)
-    res = index.query(augments(res_str))
+    res =  index.query(augments(in_query, res_str))
     print(res.response)
 
 
   
-
     
