@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+
+>>>>>>> f533ca4639b9b6df35e24288faba81440b713ab4
 import os
 from llama_index import GPTTreeIndex, SimpleDirectoryReader, GPTEmptyIndex
 
