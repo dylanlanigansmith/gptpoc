@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 
->>>>>>> f533ca4639b9b6df35e24288faba81440b713ab4
 import os
 from llama_index import GPTTreeIndex, SimpleDirectoryReader, GPTEmptyIndex
 
@@ -18,21 +15,32 @@ if len(key) < 20:
     exit()
 
 from bs4 import BeautifulSoup
-from urllib.request import urlopen
+from urllib.request import urlopen, HTTPError, URLError
+from socket import timeout
 
 print("skynet 2023")
 def search_augment(query):
     #search_context = " "
     #from test one: "I just asked you to either search or answer the question, 'where do birds go when it rains', you searched, so here are the results of the search from the first web page, please read them and answer my questions briefly, the results are: " + results
     
-    search_idx = query.find("search(")
+    search_idx = query.lower().find("search(")
     if( search_idx != -1):
         search_query = query[query.find("(")+1:query.find(")")] #python be like 
         print("SEARCH AUGMENT! Searching ddg for: " + search_query)
         search_results = ddg(search_query, region="us-en", max_results = 3)
+        while(len(search_results) < 1):
+             search_results = ddg(search_query, region="us-en", max_results = 3)
         url = search_results[0]["href"]
-        page = urlopen(url)
-        html = page.read().decode("utf-8")
+        print("SEARCH AUGMENT! Attempting to scrape:  " + url)
+        try: #TODO make function and have it try next result if failure
+            html = urlopen(url, timeout=15).read().decode('utf-8')
+        except (HTTPError, URLError) as error:
+            print('Data %s not retrieved because %s\nURL: %s', error, url)
+            raise "No can do buddy"
+        except timeout:
+            print('socket timed out - URL %s', url)
+            raise "sorry bro"
+        
         soup = BeautifulSoup(html, "html.parser")
         results = soup.find_all("p") #make better
         content = ""
@@ -47,18 +55,18 @@ def augments(query):
 
 documents = SimpleDirectoryReader('data').load_data()
 index = GPTTreeIndex(documents)
-windex = GPTTreeIndex([])
+#windex = GPTTreeIndex([])
 while(1):    
     question = input(">>> ")
     if(question == "exit"):
         print("exiting") #stupid
         exit()
-    query = question + " (if searching the internet would be helpful please respond with 'search(relevant search prompt here)' to recieve the search results as a followup prompt)"
+    in_query = question + " (if searching the internet would be helpful please respond with 'search(relevant search prompt here)' to recieve the search results as a followup prompt)"
     #fix this asap so u dont waste tokens/$$$ OR DONT 
     #res = index.query("where do birds go when it rains?", mode = "default").response
-    res = index.query(query).response
-    print("Input response: " + res)
-    res = index.query(augments(res))
+    res_str = index.query(in_query).response
+    print("Input response: " + res_str)
+    res = index.query(augments(res_str))
     print(res.response)
 
 
