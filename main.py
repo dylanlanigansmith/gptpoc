@@ -1,6 +1,16 @@
 
+#Dylan Lanigan-Smith's code, don't copy it unless I said you could, or do, can't really stop ya
+#testing on python 3.10.9 macOS Ventura mpb m1 
+#add an api key file
 import os
+#greasy way to do this
+import logging, sys
+
+logfile = open("llama.log", "w")
+logging.basicConfig(stream=logfile, level=logging.INFO)
+
 from llama_index import GPTTreeIndex, SimpleDirectoryReader, GPTEmptyIndex
+
 
 
 #ddg(keyword, region="us-en") https://pypi.org/project/duckduckgo-search/
@@ -15,10 +25,16 @@ if len(key) < 20:
     exit()
 
 from bs4 import BeautifulSoup
-from urllib.request import urlopen, HTTPError, URLError
+from urllib.request import urlopen, HTTPError, URLError, Request
 from socket import timeout
 
 print("skynet 2023")
+
+#issues:
+#timeouts/https errors
+#doesnt know date 
+#...
+
 def search_augment(query):
     #search_context = " "
     #from test one: "I just asked you to either search or answer the question, 'where do birds go when it rains', you searched, so here are the results of the search from the first web page, please read them and answer my questions briefly, the results are: " + results
@@ -32,13 +48,22 @@ def search_augment(query):
              search_results = ddg(search_query, region="us-en", max_results = 3)
         url = search_results[0]["href"]
         print("SEARCH AUGMENT! Attempting to scrape:  " + url)
+        req = Request(
+            url, 
+            data=None, 
+            headers={
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36'
+            }
+        )
         try: #TODO make function and have it try next result if failure
-            html = urlopen(url, timeout=15).read().decode('utf-8')
+            html = urlopen(req, timeout=15).read().decode('utf-8')
         except (HTTPError, URLError) as error:
             print('Data %s not retrieved because %s\nURL: %s', error, url)
+            logfile.close() #greasy
             raise "No can do buddy"
         except timeout:
             print('socket timed out - URL %s', url)
+            logfile.close()
             raise "sorry bro"
         
         soup = BeautifulSoup(html, "html.parser")
@@ -46,7 +71,7 @@ def search_augment(query):
         content = ""
         for res in results:
             content += res.get_text() + " " #this way is better: https://stackoverflow.com/questions/1936466/how-to-scrape-only-visible-webpage-text-with-beautifulsoup
-        query += " This is the content of the first webpage for search prompt '" + search_query + "' please utilize them to answer from the provided previous context the initial question that prompted you to search. Results:" + content
+        query += " This is the content of the first webpage for search prompt '" + search_query + "' please utilize them to answer from the provided previous context the initial question that prompted you to search. Do not refer to the initial question directly, instead reword it so that your answer works as a statement with the subject of the question included. Do not refer to having searched the web either, just answer the question professionally and with intelligent choice of included details. Results:" + content
         return query
 
 def augments(query):
@@ -60,6 +85,7 @@ while(1):
     question = input(">>> ")
     if(question == "exit"):
         print("exiting") #stupid
+        logfile.close()
         exit()
     in_query = question + " (if searching the internet would be helpful please respond with 'search(relevant search prompt here)' to recieve the search results as a followup prompt)"
     #fix this asap so u dont waste tokens/$$$ OR DONT 
