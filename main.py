@@ -1,4 +1,4 @@
-#OPENAI KEY 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
+
 import os
 from llama_index import GPTTreeIndex, SimpleDirectoryReader, GPTEmptyIndex
 
