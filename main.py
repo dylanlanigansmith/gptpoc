@@ -74,7 +74,7 @@ def search_augment(in_query, query):
         if len(content) > 2048:
             content = content[0 : 2047]
         
-        query += " This is the content of the first webpage for search prompt '" + search_query + "' please utilize them to answer from the provided previous context the initial question that prompted you to search. Do not refer to the initial question directly, instead reword it so that your answer works as a statement with the subject of the question included. Do not refer to having searched the web either, just answer the question professionally and with intelligent choice of included details. Make sure to end your answer by suggesting some sources of bias that the webpage you found info from may potentially have. Previous user question for that prompted your search for context: " + in_query + "Results:" + content.strip()
+        query += " This is the content of the first webpage for search prompt '" + search_query + "' please utilize them to answer from the provided previous context the initial question that prompted you to search. Do not refer to the initial question directly, instead reword it so that your answer works as a statement with the subject of the question included. Do not refer to having searched the web either, just answer the question professionally and with intelligent choice of included details. If the question is political make sure to end your answer by suggesting some sources of bias that the webpage you found info from may potentially have. Previous user question for that prompted your search for context: " + in_query + "Results:" + content.strip()
         return query
 
 def augments(in_query, query):
